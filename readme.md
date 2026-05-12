@@ -17,6 +17,7 @@ A RESTful backend API for a **Team Task Management** platform. Built with **Node
 - [Data Models](#data-models)
 - [Business Rules](#business-rules)
 - [Background Jobs](#background-jobs)
+- [Further Improvements](#further-improvements)
 
 ---
 
@@ -335,4 +336,45 @@ updatedAt    DateTime
 - Finds all tasks where `dueDate ≤ now + 24h`, `status ≠ done`, and `isOverdue = false`
 - Batch-updates them to `isOverdue: true`
 - Logs the count of tasks updated on each tick
+
+---
+
+## Further Improvements
+
+### 1. Per-User Analytics
+Extend the reporting layer with user-scoped metrics:
+- Total tasks completed by a user in the current calendar month
+- Full list of projects a user has contributed to (as owner or assignee)
+- Per-user completion rate and average time-to-done across all assigned tasks
+- A dedicated `GET /api/users/:id/report` endpoint returning these metrics, protected so users can only view their own report unless they hold an admin role
+
+### 2. Global Admin Role
+Introduce an `admin` flag on the `User` model:
+- Admins can `GET /api/projects` and see **all** projects, not only ones they own
+- Admins can `GET /api/tasks` across every project
+- An admin-only analytics endpoint (`GET /api/admin/report`) aggregates platform-wide stats: total users, active projects, tasks per status, overdue rate, top contributors
+- Role enforcement added to the JWT middleware so admin routes reject non-admin tokens with `403 Forbidden`
+
+### 3. Sprint Planning
+Add a `Sprint` model in PostgreSQL linked to a project:
+- Fields: `name`, `startDate`, `endDate`, `goal`, `status` (`planning | active | completed`)
+- Tasks gain a nullable `sprintId` foreign key so they can be slotted into a sprint
+- Endpoints: `POST /api/projects/:id/sprints`, `GET /api/projects/:id/sprints`, `PATCH /api/sprints/:id`, `DELETE /api/sprints/:id`
+- A sprint report (`GET /api/sprints/:id/report`) returns velocity (story points or task count), carry-over tasks, and completion rate for that sprint window
+- Only the project owner can create or close a sprint
+
+### 4. 14-Day Hard Overdue Rule
+Change the overdue detection logic so that any task whose `dueDate` is more than **14 days in the past** and whose `status` is not `done` is unconditionally marked `isOverdue: true`, regardless of how it was originally scheduled. The cron job already runs every minute — the WHERE clause simply needs an additional condition:
+```
+dueDate <= now() - interval '14 days'
+```
+This acts as a safety net that catches tasks where the due date was set far in the future but the sprint window has long since closed.
+
+### 5. Monthly Email Reports via Cron Job
+Add a second `node-cron` job that fires on the last day of each month (`0 0 28-31 * *`, guarded by a last-day-of-month check):
+- Queries each user's completed, pending, and overdue task counts for the month
+- Renders a summary email (HTML template) with those metrics plus a list of high-priority unresolved items
+- Sends via **Nodemailer** (SMTP) or a transactional provider such as SendGrid / AWS SES
+- Adds `email` to the `User` model (MongoDB) and an `emailNotifications` opt-out flag so users can unsubscribe
+- All credentials (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_FROM`) live in `.env` and are never hardcoded
 
