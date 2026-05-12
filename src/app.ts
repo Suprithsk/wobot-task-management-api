@@ -1,5 +1,6 @@
 import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
+import authRoutes from './modules/auth/auth.routes';
 
 const app: Application = express();
 
@@ -14,5 +15,8 @@ app.get('/health', (_req: Request, res: Response) => {
     message: 'Server running',
   });
 });
+
+// Routes
+app.use('/api/auth', authRoutes);
 
 export default app;
