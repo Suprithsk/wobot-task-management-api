@@ -1,6 +1,17 @@
 import cron from 'node-cron';
 import prisma from '../config/prisma';
 
+// Suppress node-cron's one-time "missed execution" startup warning.
+// It fires when the process registers the job after the current minute's
+// tick has already passed (normal during container startup).
+const _originalWarn = console.warn.bind(console);
+console.warn = (...args: unknown[]) => {
+  if (typeof args[0] === 'string' && args[0].includes('[NODE-CRON]') && args[0].includes('missed execution')) {
+    return;
+  }
+  _originalWarn(...args);
+};
+
 export const startOverdueJob = (): void => {
   // Runs every minute — short interval for demo; change to '0 * * * *' for production
   cron.schedule('* * * * *', async () => {

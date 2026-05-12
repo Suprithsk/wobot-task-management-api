@@ -1,0 +1,419 @@
+{
+  "info": {
+    "name": "Wobot Task Management — Seeded Flow",
+    "_postman_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+    "description": "Run `npm run seed` first, then execute requests in order. Post-response scripts auto-set token, project_id, and task_id as you go.\n\nSeeded credentials:\n  Alice (project owner): alice@example.com / Alice@123\n  Bob (assignee):        bob@example.com  / Bob@123",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string",
+      "description": "Auto-set by Login requests"
+    },
+    {
+      "key": "project_id",
+      "value": "",
+      "type": "string",
+      "description": "Auto-set by Step 3 — Get My Projects"
+    },
+    {
+      "key": "task_id",
+      "value": "",
+      "type": "string",
+      "description": "Auto-set by Step 5 — Get All Tasks"
+    }
+  ],
+  "item": [
+    {
+      "name": "Step 1 — Health Check",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/health",
+          "host": ["{{base_url}}"],
+          "path": ["health"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Step 2 — Login as Alice (owner)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const res = pm.response.json();",
+              "if (res.data && res.data.token) {",
+              "  pm.collectionVariables.set('token', res.data.token);",
+              "  console.log('Token set for Alice:', res.data.user.name);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{base_url}}/api/auth/login",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "login"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"alice@example.com\",\n  \"password\": \"Alice@123\"\n}",
+          "options": { "raw": { "language": "json" } }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Step 3 — Get My Projects (sets project_id)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const res = pm.response.json();",
+              "if (res.data && res.data.length > 0) {",
+              "  pm.collectionVariables.set('project_id', res.data[0].id);",
+              "  console.log('project_id set to:', res.data[0].id, '-', res.data[0].name);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": {
+          "raw": "{{base_url}}/api/projects",
+          "host": ["{{base_url}}"],
+          "path": ["api", "projects"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Step 4 — Get Project by ID",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": {
+          "raw": "{{base_url}}/api/projects/{{project_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "projects", "{{project_id}}"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Step 5 — Get All Tasks (sets task_id)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const res = pm.response.json();",
+              "if (res.data && res.data.length > 0) {",
+              "  // pick a task assigned to Bob so Step 11 (update) works",
+              "  const bobTask = res.data.find(t => t.assignee && t.assignee.email === 'bob@example.com' && t.status !== 'done');",
+              "  const target = bobTask || res.data[0];",
+              "  pm.collectionVariables.set('task_id', target.id);",
+              "  console.log('task_id set to:', target.id, '-', target.title);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": {
+          "raw": "{{base_url}}/api/tasks",
+          "host": ["{{base_url}}"],
+          "path": ["api", "tasks"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Step 6 — Get Tasks filtered by project",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": {
+          "raw": "{{base_url}}/api/tasks?projectId={{project_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "tasks"],
+          "query": [
+            { "key": "projectId", "value": "{{project_id}}" }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Step 7 — Get Tasks filtered by status=todo",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": {
+          "raw": "{{base_url}}/api/tasks?projectId={{project_id}}&status=todo",
+          "host": ["{{base_url}}"],
+          "path": ["api", "tasks"],
+          "query": [
+            { "key": "projectId", "value": "{{project_id}}" },
+            { "key": "status", "value": "todo" }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Step 8 — Get Tasks filtered by priority=high",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": {
+          "raw": "{{base_url}}/api/tasks?projectId={{project_id}}&priority=high",
+          "host": ["{{base_url}}"],
+          "path": ["api", "tasks"],
+          "query": [
+            { "key": "projectId", "value": "{{project_id}}" },
+            { "key": "priority", "value": "high" }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Step 9 — Get Task by ID",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": {
+          "raw": "{{base_url}}/api/tasks/{{task_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "tasks", "{{task_id}}"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Step 10 — Create New Task (as Alice / owner)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const res = pm.response.json();",
+              "if (res.data && res.data.id) {",
+              "  pm.collectionVariables.set('task_id', res.data.id);",
+              "  console.log('task_id updated to new task:', res.data.id);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/tasks",
+          "host": ["{{base_url}}"],
+          "path": ["api", "tasks"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"projectId\": \"{{project_id}}\",\n  \"title\": \"Review pull requests\",\n  \"description\": \"Review and merge open PRs before end of sprint\",\n  \"priority\": \"medium\",\n  \"assignedTo\": \"REPLACE_WITH_ALICE_MONGO_ID\",\n  \"dueDate\": \"2026-05-18T00:00:00.000Z\"\n}",
+          "options": { "raw": { "language": "json" } }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Step 11 — Login as Bob (assignee)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const res = pm.response.json();",
+              "if (res.data && res.data.token) {",
+              "  pm.collectionVariables.set('token', res.data.token);",
+              "  console.log('Token switched to Bob:', res.data.user.name);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{base_url}}/api/auth/login",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "login"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"bob@example.com\",\n  \"password\": \"Bob@123\"\n}",
+          "options": { "raw": { "language": "json" } }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Step 12 — Update Task Status (as Bob / assigned user)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/tasks/{{task_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "tasks", "{{task_id}}"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"in_progress\",\n  \"description\": \"Actively working on deploying — server configs updated\"\n}",
+          "options": { "raw": { "language": "json" } }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Step 13 — Update Task as Alice (403 — not assignee)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/tasks/{{task_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "tasks", "{{task_id}}"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"done\"\n}",
+          "options": { "raw": { "language": "json" } }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Step 14 — Login as Alice again",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const res = pm.response.json();",
+              "if (res.data && res.data.token) {",
+              "  pm.collectionVariables.set('token', res.data.token);",
+              "  console.log('Token switched back to Alice');",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{base_url}}/api/auth/login",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "login"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"alice@example.com\",\n  \"password\": \"Alice@123\"\n}",
+          "options": { "raw": { "language": "json" } }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Step 15 — Get Project Report (before cron fires)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": {
+          "raw": "{{base_url}}/api/projects/{{project_id}}/report",
+          "host": ["{{base_url}}"],
+          "path": ["api", "projects", "{{project_id}}", "report"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Step 16 — Get Project Report (after cron fires — overdueCount should be 3)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": {
+          "raw": "{{base_url}}/api/projects/{{project_id}}/report",
+          "host": ["{{base_url}}"],
+          "path": ["api", "projects", "{{project_id}}", "report"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Step 17 — Delete Task (as Alice / owner)",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": {
+          "raw": "{{base_url}}/api/tasks/{{task_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "tasks", "{{task_id}}"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Step 18 — Update Project",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/projects/{{project_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "projects", "{{project_id}}"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Website Redesign v2\",\n  \"description\": \"Redesign expanded to include mobile app screens\"\n}",
+          "options": { "raw": { "language": "json" } }
+        }
+      },
+      "response": []
+    }
+  ]
+}
