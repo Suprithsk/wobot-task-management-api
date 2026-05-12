@@ -528,6 +528,45 @@
           ]
         }
       ]
+    },
+    {
+      "name": "Reports",
+      "item": [
+        {
+          "name": "Get Project Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/projects/{{project_id}}/report",
+              "host": ["{{base_url}}"],
+              "path": ["api", "projects", "{{project_id}}", "report"]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"projectId\": \"d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a\",\n    \"projectName\": \"Website Redesign\",\n    \"totalTasks\": 8,\n    \"byStatus\": {\n      \"todo\": 3,\n      \"in_progress\": 2,\n      \"done\": 3\n    },\n    \"overdueCount\": 1,\n    \"completionRate\": 37.5,\n    \"highPriorityUnresolved\": [\n      {\n        \"id\": \"a1b2c3d4-e5f6-7890-abcd-111122223333\",\n        \"title\": \"Design homepage wireframe\",\n        \"status\": \"in_progress\",\n        \"dueDate\": \"2026-05-20T00:00:00.000Z\",\n        \"isOverdue\": false,\n        \"assignedTo\": \"6641f2c3e4b0a12345678901\",\n        \"assignee\": {\n          \"id\": \"6641f2c3e4b0a12345678901\",\n          \"name\": \"Alice Johnson\",\n          \"email\": \"alice@example.com\"\n        }\n      }\n    ]\n  }\n}"
+            },
+            {
+              "name": "403 Forbidden — not project owner",
+              "status": "Forbidden",
+              "code": 403,
+              "body": "{\n  \"success\": false,\n  \"message\": \"Access denied\"\n}"
+            },
+            {
+              "name": "404 Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "body": "{\n  \"success\": false,\n  \"message\": \"Project not found\"\n}"
+            }
+          ]
+        }
+      ]
     }
   ]
 }
