@@ -1,6 +1,8 @@
 import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import authRoutes from './modules/auth/auth.routes';
+import projectRoutes from './modules/project/project.routes';
+import taskRoutes from './modules/task/task.routes';
 
 const app: Application = express();
 
@@ -18,5 +20,7 @@ app.get('/health', (_req: Request, res: Response) => {
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/projects', projectRoutes);
+app.use('/api/tasks', taskRoutes);
 
 export default app;
