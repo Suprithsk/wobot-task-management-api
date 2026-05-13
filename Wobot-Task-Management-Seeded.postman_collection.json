@@ -241,7 +241,7 @@
         },
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"projectId\": \"{{project_id}}\",\n  \"title\": \"Review pull requests\",\n  \"description\": \"Review and merge open PRs before end of sprint\",\n  \"priority\": \"medium\",\n  \"assignedTo\": \"REPLACE_WITH_ALICE_MONGO_ID\",\n  \"dueDate\": \"2026-05-18T00:00:00.000Z\"\n}",
+          "raw": "{\n  \"projectId\": \"{{project_id}}\",\n  \"title\": \"Review pull requests\",\n  \"description\": \"Review and merge open PRs before end of sprint\",\n  \"priority\": \"medium\",\n  \"assignedTo\": \"REPLACE_WITH_BOB_MONGO_ID\",\n  \"dueDate\": \"2026-05-18T00:00:00.000Z\"\n}",
           "options": { "raw": { "language": "json" } }
         }
       },
